@@ -1,6 +1,10 @@
 services:
   ts-serve-echo-mcp:
-    image: tailscale/tailscale:latest
+    build:
+      context: ${TS_OSS_REPO}
+      dockerfile: Dockerfile
+    entrypoint: /tailscale/run.sh
+#    image: tailscale/tailscale:v1.88.2
     container_name: ts-serve-echo-mcp
     hostname: ts-mcp-echo
     environment:
