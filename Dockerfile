@@ -21,5 +21,4 @@ EXPOSE 8080
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Run the application
-ENV MCP_TRANSPORT=streamable-http
-CMD ["uv", "run", "main.py"]
+CMD ["fastmcp", "run", "main.py", "--transport", "streamable-http", "--port", "8080"]
