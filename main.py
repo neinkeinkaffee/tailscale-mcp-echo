@@ -1,11 +1,30 @@
+import json
+
 from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_http_request
+from email.header import decode_header
 from starlette.requests import Request
 from urllib.parse import unquote
-import json
 
 mcp = FastMCP(name="Tailscale Identity Echo Server")
 
+def decode_mime_header(encoded_string: str) -> str:
+    """
+    Decodes a MIME-encoded header string (RFC 2047) into a readable string.
+
+    Handles both Q-encoding and Base64 encoding.
+    """
+    decoded_parts = []
+    for decoded_bytes, charset in decode_header(encoded_string):
+        # If a charset is specified, use it. Otherwise, default to 'ascii'.
+        if isinstance(decoded_bytes, bytes):
+            if charset:
+                decoded_parts.append(decoded_bytes.decode(charset))
+            else:
+                decoded_parts.append(decoded_bytes.decode('ascii'))
+        else:
+            decoded_parts.append(decoded_bytes)
+    return "".join(decoded_parts)
 
 @mcp.tool()
 async def greet() -> str:
@@ -23,13 +42,11 @@ async def greet() -> str:
     user_profile_picture = request.headers.get("Tailscale-User-Profile-Pic", "Unknown")
 
     user_capabilities_encoded = request.headers.get("Tailscale-User-Capabilities", "")
-    # Decode the URL (Percent) encoding.
-    # This converts strings like '%7B%22role...%22%7D' back to '{"role...":"..."}'.
-    user_capabilities_decoded = unquote(user_capabilities_encoded)
+    user_capabilities_decoded = decode_mime_header(user_capabilities_encoded)
     data = json.loads(user_capabilities_decoded)
-    print(f"Successfully decoded capability header. Found is: {data}")
+    print(f"Successfully decoded capability header. Found: {user_capabilities_decoded}")
 
-    role = data.get("example.com/cap/greet", [{}])[0].get("role")
+    role = data.get("example.com/cap/echo", [{}])[0].get("role")
 
     return f"""Hello, {user_name}!
 You're logged in to Tailscale as {user_login}.
@@ -44,20 +61,14 @@ async def tellJoke() -> str:
         str: Based on the role of the user for this app, the joke will be ok or very good.
     """
 
-    request: Request = get_http_request()
-
-    user_login = request.headers.get("Tailscale-User-Login", "Unknown")
-    user_name = request.headers.get("Tailscale-User-Name", "Unknown")
-    user_profile_picture = request.headers.get("Tailscale-User-Profile-Pic", "Unknown")
-
+    request = get_http_request()
     user_capabilities_encoded = request.headers.get("Tailscale-User-Capabilities", "")
-    # Decode the URL (Percent) encoding.
-    # This converts strings like '%7B%22role...%22%7D' back to '{"role...":"..."}'.
-    user_capabilities_decoded = unquote(user_capabilities_encoded)
-    data = json.loads(user_capabilities_decoded)
-    print(f"Successfully decoded capability header. Found is: {data}")
+    print(f"Got Tailscale user capability header: {user_capabilities_encoded}")
+    user_capabilities_decoded = decode_mime_header(user_capabilities_encoded)
+    print(f"Successfully decoded capability header: {user_capabilities_decoded}")
+    user_capabilities_parsed = json.loads(user_capabilities_decoded)
 
-    role = data.get("example.com/cap/greet", [{}])[0].get("role")
+    role = user_capabilities_parsed.get("example.com/cap/echo", [{}])[0].get("role", "")
 
     if role == "👑":
         return f"""This user has access to very good jokes due to their role {role}. Here comes one.

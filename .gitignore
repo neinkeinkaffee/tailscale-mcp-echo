@@ -24,4 +24,3 @@ ENV/
 
 # State and config directories specific to this app
 state/
-tmp/
