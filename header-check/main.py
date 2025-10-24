@@ -30,7 +30,7 @@ class EchoHeadersHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/plain; charset=utf-8')
         self.end_headers()
 
-        encoded_header_value = self.headers.get('Tailscale-User-Capabilities')
+        encoded_header_value = self.headers.get('Tailscale-App-Capabilities')
         print("Encoded header value:", encoded_header_value)
         try:
             decoded_header_value = self.decode_mime_header(encoded_header_value)
