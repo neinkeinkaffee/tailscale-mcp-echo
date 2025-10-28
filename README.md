@@ -1,5 +1,7 @@
 # Identity Aware MCP Server for Tailscale
 
+This is a modified fork of https://github.com/remyguercio/tailscale-mcp-echo.
+
 <img width="1125" alt="TailscaleMCPIdentityHero" src="https://github.com/user-attachments/assets/1e05e3a6-019d-4e16-b591-3691bcee16e6" />
 
 Create an identiy aware MCP server that runs inside your private Tailscale network (Tailnet). This example leverages identity headers that are passed through to applications running behind `tailscale serve`.
@@ -12,7 +14,8 @@ Using this as starting point you can create MCP servers that are identity aware 
 
 1. If you don't already have a Tailnet setup you'll need to [signup for one](https://tailscale.com).
 2. Create an [API auth key](https://login.tailscale.com/admin/settings/keys) and save it into a `.env` file in the root of this project with the following format: `TS_AUTHKEY=tskey-auth-...`
-3. With Docker already installed, run `docker compose up` to start the server.
+3. Checkout the tailscale OSS repository. Store the path to the repository root in an environment variable `TS_OSS_REPO`.
+4. With Docker already installed, run `docker compose up` to start the server.
 
 This will spin up two containers. The MCP server and a Tailscale container running `tailscale serve` as a proxy to your tailnet.
 
@@ -41,7 +44,7 @@ Claude desktop does not currently support remote MCP servers (only stdio), but y
         }
     ```
 
-    You can find your tailnet name by visiting the [Tailscale admin console DNS page](https://login.tailscale.com/admin/dns).
+   You can find your tailnet name by visiting the [Tailscale admin console DNS page](https://login.tailscale.com/admin/dns).
 3. Restart Claude Desktop.
 4. You should now see a new MCP server called `tailscale-remote-echo-example` with a `greet` tool.
 5. Ask Claude `Who am I logged into my tailnet as?` allow the tool, and wait for the response!

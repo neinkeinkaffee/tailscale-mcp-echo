@@ -9,7 +9,7 @@
         "Handlers": {
           "/": {
             "Proxy": "http://127.0.0.1:8080",
-            "UserCaps": ["example.com/cap/echo"]
+            "AcceptAppCaps": ["example.com/cap/echo"]
           }
         }
       }

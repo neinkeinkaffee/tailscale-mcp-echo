@@ -4,27 +4,14 @@ from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_http_request
 from email.header import decode_header
 from starlette.requests import Request
-from urllib.parse import unquote
+
+TS_USER_CAPABILITIES_HEADER = "Tailscale-App-Capabilities"
+TS_USER_LOGIN_HEADER = "Tailscale-User-Login"
+TS_USER_NAME_HEADER = "Tailscale-User-Name"
+TS_USER_PROFILE_PIC_HEADER = "Tailscale-User-Profile-Pic"
 
 mcp = FastMCP(name="Tailscale Identity Echo Server")
 
-def decode_mime_header(encoded_string: str) -> str:
-    """
-    Decodes a MIME-encoded header string (RFC 2047) into a readable string.
-
-    Handles both Q-encoding and Base64 encoding.
-    """
-    decoded_parts = []
-    for decoded_bytes, charset in decode_header(encoded_string):
-        # If a charset is specified, use it. Otherwise, default to 'ascii'.
-        if isinstance(decoded_bytes, bytes):
-            if charset:
-                decoded_parts.append(decoded_bytes.decode(charset))
-            else:
-                decoded_parts.append(decoded_bytes.decode('ascii'))
-        else:
-            decoded_parts.append(decoded_bytes)
-    return "".join(decoded_parts)
 
 @mcp.tool()
 async def greet() -> str:
@@ -37,12 +24,15 @@ async def greet() -> str:
 
     request: Request = get_http_request()
 
-    user_login = request.headers.get("Tailscale-User-Login", "Unknown")
-    user_name = request.headers.get("Tailscale-User-Name", "Unknown")
-    user_profile_picture = request.headers.get("Tailscale-User-Profile-Pic", "Unknown")
+    user_login = request.headers.get(TS_USER_LOGIN_HEADER, "Unknown")
+    print(f"Got Tailscale user login header: {user_login}")
+    user_name = request.headers.get(TS_USER_NAME_HEADER, "Unknown")
+    user_profile_picture = request.headers.get(TS_USER_PROFILE_PIC_HEADER, "Unknown")
 
-    user_capabilities_encoded = request.headers.get("Tailscale-User-Capabilities", "")
+    user_capabilities_encoded = request.headers.get('Tailscale-App-Capabilities')
+    print(f"Got Tailscale user capability header: {user_capabilities_encoded}")
     user_capabilities_decoded = decode_mime_header(user_capabilities_encoded)
+    print(f"Got Tailscale user capability header: {user_capabilities_decoded}")
     data = json.loads(user_capabilities_decoded)
     print(f"Successfully decoded capability header. Found: {user_capabilities_decoded}")
 
@@ -53,6 +43,7 @@ You're logged in to Tailscale as {user_login}.
 With a profile picture at this URL: {user_profile_picture}.
 Your role is {role}."""
 
+
 @mcp.tool()
 async def tellJoke() -> str:
     """Reads the identity request headers passed in from Tailscale Serve and returns a joke.
@@ -62,7 +53,7 @@ async def tellJoke() -> str:
     """
 
     request = get_http_request()
-    user_capabilities_encoded = request.headers.get("Tailscale-User-Capabilities", "")
+    user_capabilities_encoded = request.headers.get(TS_USER_CAPABILITIES_HEADER, "")
     print(f"Got Tailscale user capability header: {user_capabilities_encoded}")
     user_capabilities_decoded = decode_mime_header(user_capabilities_encoded)
     print(f"Successfully decoded capability header: {user_capabilities_decoded}")
@@ -82,3 +73,22 @@ async def tellJoke() -> str:
         Why does the tide ebb and flow? – 
         Because when the sea saw the East Frisians, it got such a shock that it ran away. 
         Now it returns twice a day to see if they're still there!"""
+
+
+def decode_mime_header(encoded_string: str) -> str:
+    """
+    Decodes a MIME-encoded header string (RFC 2047) into a readable string.
+
+    Handles both Q-encoding and Base64 encoding.
+    """
+    decoded_parts = []
+    for decoded_bytes, charset in decode_header(encoded_string):
+        # If a charset is specified, use it. Otherwise, default to 'ascii'.
+        if isinstance(decoded_bytes, bytes):
+            if charset:
+                decoded_parts.append(decoded_bytes.decode(charset))
+            else:
+                decoded_parts.append(decoded_bytes.decode('ascii'))
+        else:
+            decoded_parts.append(decoded_bytes)
+    return "".join(decoded_parts)
